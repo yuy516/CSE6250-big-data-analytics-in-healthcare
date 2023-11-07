@@ -1,0 +1,19 @@
+name: project
+dependencies:
+  - python=3.9
+  - matplotlib
+  - nose
+  - numpy
+  - pandas
+  - scikit-learn
+  - scipy
+  - python-dateutil
+  - pip
+  - Py4J
+  - pyarrow
+  - pyspark
+  - pip:
+    - gensim
+    - argparse == 1.1
+    - keras
+    - nltk
