@@ -203,49 +203,76 @@ def solve_imbalance_data(data):
     if (n0 > n1):
         df1 = pd.DataFrame(np.repeat(df1.values, n0//n1, axis=0), columns=['id', 'text', 'label'])
         newdata = pd.concat([df0, df1], ignore_index=True)
+    elif (n1 > n0):
+        df0 = pd.DataFrame(np.repeat(df0.values, n1 // n0, axis=0), columns=['id', 'text', 'label'])
+        newdata = pd.concat([df0, df1], ignore_index=True)
     return newdata
 
 def main():
-    warnings.filterwarnings("ignore")
+    # warnings.filterwarnings("ignore")
+
     # nltk.download('punkt')
     # nltk.download('wordnet')
     # nltk.download('words')
     # nltk.download('stopwords')
+
     filepath = '../data/processed/'
-    disease = input("Enter disease:")
+    models = [('svm', svm_pred, []),
+              ('naive bayes', naive_bayes_pred, []),
+              ('random forest', random_forest_pred, []),
+              ('knn1', knn1_pred, []),
+              ('knn5', knn5_pred, []),
+              ('decision tree', decision_tree_pred, [])]
+
     feature_selection = input("Enter feature selection type:")
-    if disease == "":
-        disease = 'Asthma'
     if feature_selection == "":
         feature_selection = 'All Features'
     print("---------------------------")
-    print('Disease Name:' + disease)
-    print('Feature Selection Type:'+ feature_selection)
-    df_train, df_test, df_all = read_csv(filepath, disease)
-    df_all = solve_imbalance_data(df_all)
-    text, label = get_list(df_all)
-    X, Y = preprocess_text(text, label)
-    if feature_selection == 'ExtraTreesClassifier':
-        X = ExtraTrees_feature_selection(X, Y)
-    elif feature_selection == 'SelectKBest':
-        X = SelectKBest(f_classif, k=X.shape[1]//5).fit_transform(X, Y)
+    print('Feature Selection Type:' + feature_selection)
 
-    print('The shape of TF-IDF matrix is :', X.shape)
-    models = [('svm', svm_pred),
-              ('naive bayes', naive_bayes_pred),
-              ('random forest', random_forest_pred),
-              ('knn1', knn1_pred),
-              ('knn5', knn5_pred),
-              ('decision tree', decision_tree_pred)]
-    for model_name, model in models:
-        start_time = time.time()
-        acc_avg, auc_avg, f1_avg = get_matrics_kfold(X, Y, 10, model)
-        print('-----The Metrics Report------')
+    diseases = ['Asthma', 'CAD', 'CHF', 'Depression', 'Diabetes', 'Gallstones', 'GERD', 'Gout', 'HC', 'Hypertension',
+                'HT', 'OA', 'Obesity', 'OSA', 'PVD', 'VI']
+    for disease in diseases:
+        print("---------------------------")
+        print('Disease Name:' + disease)
+        df_train, df_test, df_all = read_csv(filepath, disease)
+        # calculate positive and negative cases before solving imbalance
+        text, label = get_list(df_all)
+        print("No. of 0:", label.count(0))
+        print("No. of 1:", label.count(1))
+
+        df_all = solve_imbalance_data(df_all)
+        text, label = get_list(df_all)
+        X, Y = preprocess_text(text, label)
+
+        if feature_selection == 'ExtraTreesClassifier':
+            X = ExtraTrees_feature_selection(X, Y)
+        elif feature_selection == 'SelectKBest':
+            X = SelectKBest(f_classif, k=X.shape[1]//5).fit_transform(X, Y)
+
+        print('The shape of TF-IDF matrix is :', X.shape)
+
+
+        for model_name, model, avg in models:
+            start_time = time.time()
+            acc_avg, auc_avg, f1_avg = get_matrics_kfold(X, Y, 10, model)
+            avg.append([acc_avg, auc_avg, f1_avg])
+            print('-----The Metrics Report------')
+            print('>>> Model Name:' + model_name)
+            print('>>> Training Time:', time.time() - start_time)
+            print('>>> Accuracy:', acc_avg)
+            print('>>> AUC:', auc_avg)
+            print('>>> F1:', f1_avg)
+
+    print('-----The Final Report------')
+    for model_name, model, avg in models:
+        print("---------------------------")
+        average = np.array(avg)
+        column_mean = np.mean(average, axis=0)
         print('>>> Model Name:' + model_name)
-        print('>>> Training Time:', time.time() - start_time)
-        print('>>> Accuracy:', acc_avg)
-        print('>>> AUC:', auc_avg)
-        print('>>> F1:', f1_avg)
+        print('>>> Average Accuracy:', column_mean[0])
+        print('>>> Average AUC:', column_mean[1])
+        print('>>> Average F1:', column_mean[2])
 
 if __name__ == "__main__":
     main()

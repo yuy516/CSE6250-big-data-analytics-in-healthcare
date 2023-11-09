@@ -182,7 +182,7 @@ for train_index, test_index in kf.split(X):
     print('The type of y_train_label and y_test_label are:', type(y_train_label), type(y_test_label))
 
     print('Old evaluation:')
-    model = model1.fit(x_test_text, y_test_label)
+    model = model1.fit(x_train_text, y_train_label)
     pred_labels=model.predict(x_test_text)
     print('\nOriginal classes:', y_test_label[:20], '\n', len(y_test_label))
     print('Predicted classes', pred_labels[:10], '\n', len(pred_labels), type(pred_labels))
