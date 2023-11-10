@@ -29,7 +29,6 @@ from statistics import mean
 import keras 
 from keras.layers import Embedding
 from keras.models import Sequential
-from keras.utils import to_categorical
 from keras.preprocessing import sequence
 from keras.preprocessing.text import Tokenizer 
 from keras.preprocessing.sequence import pad_sequences
@@ -62,15 +61,16 @@ import gc
 import pickle
 import datetime
 import tensorflow as tf
-import mxnet as mx
 from bert_embedding import BertEmbedding
 from scipy.sparse import random as sparse_random
-import bert
+from transformers.models.cvt.convert_cvt_original_pytorch_checkpoint_to_pytorch import attention
+
+
 
 class morbidity                                                                                                                                                                     :
     def __init__(self, target_class):
         self.target_class = target_class
-        self.train_data = pd.read_csv('file_path' + target_class + '.csv', sep=';')
+        self.train_data = pd.read_csv('../data/processed/' + target_class + '/'+ target_class + '.csv')
         print(type(self.train_data), len(self.train_data), '\n', self.train_data.head(3))
         self.train_data = self.train_data.sample(frac=1)  
         print(type(self.train_data), len(self.train_data), '\n', self.train_data.head(1))
@@ -91,8 +91,8 @@ class morbidity                                                                 
         texts = []
         labels = []
         for i,r in self.train_data.iterrows():
-            texts += [r['Text'].strip().split('\n', 1)[1]]
-            labels += [r['Label']]
+            texts += [r['text'].strip().split('\n', 1)[1]]
+            labels += [r['label']]
         self.train_texts = texts
         self.train_labels = labels
         print('Details of Training Data Text:', '\n', type(self.train_texts), len(self.train_texts))
@@ -126,7 +126,7 @@ class morbidity                                                                 
     
     def bert(self):
         print('BERT START', str(datetime.datetime.now()))
-        # A. Using Bert Model 
+        # A. Using Bert Model
         bert_embedding = BertEmbedding(model='bert_24_1024_16', dataset_name='book_corpus_wiki_en_cased')
         self.result = bert_embedding(self.train_texts)
         print(type(self.result))
@@ -160,7 +160,7 @@ class morbidity                                                                 
     def word2vec(self):
         print('> loading word2vec embeddings')
         #B. Word2Vecvec Using Gensim
-        word_vectors = KeyedVectors.load_word2vec_format('file_path/word2vec-GoogleNews-vectors-negative300.bin', binary=True)
+        word_vectors = KeyedVectors.load_word2vec_format('../lib/word2vec-GoogleNews-vectors-negative300.bin', binary=True)
         # Creating embedding matrix
         self.embedding_matrix = np.zeros((self.vocab_size, 300))
         for word, i in self.tokenizer.word_index.items():
@@ -370,7 +370,7 @@ if __name__ == "__main__":
     print(sys.argv)
     parser =  argparse.ArgumentParser(description = "Arguments")
     parser.add_argument('--target-class', dest='target_class', default='Asthma', type=str, action='store', help='The bla bla')
-    parser.add_argument('--word-embedding', dest='word_embedding', default='fasttext', type=str, action='store', help='The input file')
+    parser.add_argument('--word-embedding', dest='word_embedding', default='word2vec', type=str, action='store', help='The input file')
     parser.add_argument('--model-type', dest='model_type', default='bi_lstm', type=str, action='store', help='The input file')
     parser.add_argument('--attention-layer', dest='attention_layer', default='False', action='store', type=str, help='The input file')
     args = parser.parse_args()
