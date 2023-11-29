@@ -78,7 +78,7 @@ def embedding_word(text, label, method):
         # Fast Text Using Gensim
         word_vectors = KeyedVectors.load_word2vec_format('../lib/fasttext-300d-2M.vec', binary=False)
     elif method == 'glove':
-        word_vectors = KeyedVectors.load_word2vec_format('../lib/glove.6B.300d.txt', binary=False)
+        word_vectors = KeyedVectors.load_word2vec_format('../lib/glove.6B.300d.w2vformat.txt', binary=False)
 
     X = []
     for row in x_train_sequences:
@@ -135,6 +135,8 @@ def main():
     diseases = ['Asthma', 'CAD', 'CHF', 'Depression', 'Diabetes', 'Gallstones', 'GERD', 'Gout', 'HC', 'Hypertension',
                 'HT', 'OA', 'Obesity', 'OSA', 'PVD', 'VI']
     method = input('Word embedding method:')
+    if method == "":
+        method = "word2vec"
     print("---------------------------")
     print('Word embedding method:' + method)
     print("---------------------------")
