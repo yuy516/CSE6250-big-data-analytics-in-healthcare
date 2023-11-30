@@ -65,6 +65,20 @@ Printed classification metrics (ACC, AUC, F1) for each 16 diseases.
 ~~~~~~
 
 ~~~~~~
+Code for training DL model:
+|--code
+  |--DL_word_embedding.py 
+  
+Data folder is required for implementing DL model training using following two code files.
+
+DL_word_embedding.py: train DL model using processed csv data for each disease using word-embedding method
+--input: 
+Word embedding method should be one of "word2vec"(default if not specified)/"fasttext"/"glove"
+--output: 
+Printed classification metrics (ACC, AUC, F1) for each 16 diseases.
+~~~~~~
+
+~~~~~~
 Code for preprocessing data:
 |--code
 	|--xml2csv_x.py
