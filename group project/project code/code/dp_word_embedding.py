@@ -155,7 +155,7 @@ class morbidity                                                                 
         X = self.padded_train_data  
         Y = np.array(self.train_labels) 
         # K-fold Validation 
-        kf = KFold(n_splits=5, shuffle=True)
+        kf = KFold(n_splits=10, shuffle=True)
         kf.get_n_splits(X)
         acc_t = []
         auc_t = []
@@ -164,7 +164,7 @@ class morbidity                                                                 
         for train_index, test_index in kf.split(X):
             X_train, X_test = X[train_index], X[test_index]
             Y_train, Y_test = Y[train_index], Y[test_index]
-            self.model.fit(X_train, Y_train, epochs=1, batch_size=64, verbose=1)
+            self.model.fit(X_train, Y_train, epochs=10, batch_size=64, verbose=1)
             Y_pred=(self.model.predict(X_test) > 0.5).astype("int32")
             new_y_test, new_y_pred = self.swap_label(Y_test, Y_pred)
 
