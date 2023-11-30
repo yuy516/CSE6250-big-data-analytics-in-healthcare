@@ -46,7 +46,7 @@ Source and preprocessed data:
 ~~~~~~
 Code for training CML model:
 |--code
-	|--CML_bag_of_word.py
+  |--CML_bag_of_word.py
   |--CML_word_embedding.py 
   
 Data folder is required for implementing CML training using following two code files.
@@ -81,9 +81,10 @@ Printed classification metrics (ACC, AUC, F1) for each 16 diseases.
 ~~~~~~
 Code for preprocessing data:
 |--code
-	|--xml2csv_x.py
-	|--xml2csv_y.py
-	|--word_embedding.py
+  |--xml2csv_x.py
+  |--xml2csv_y.py
+  |--word_embedding.py
+
 xml2csv_x.py: convert xml source data to csv data, and extract medical record with labels
 xml2csv_y.py: convert xml source data to csv data, and extract meaningful labels
 word_embedding.py: extract feature and label using word embeddding methods. 
