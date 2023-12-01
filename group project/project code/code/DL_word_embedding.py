@@ -3,30 +3,31 @@ import time
 from docutils.nodes import attention
 from gensim.models.keyedvectors import KeyedVectors
 
-#Pandas and Numpy
+# Pandas and Numpy
 import pandas as pd
 import numpy as np
 from statistics import mean
 
-#Keras
+# Keras
 from keras.models import Sequential
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
-from keras.layers import Dense,Embedding, LSTM, Bidirectional
+from keras.layers import Dense, Embedding, LSTM, Bidirectional
 
-#Sci-Kit Library
-from sklearn.metrics import  roc_curve, auc
+# Sci-Kit Library
+from sklearn.metrics import roc_curve, auc
 from sklearn.model_selection import KFold
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 
-#Miscellaneous
+# Miscellaneous
 import argparse
 
-class morbidity                                                                                                                                                                     :
+
+class morbidity:
     def __init__(self, target_class):
         self.target_class = target_class
-        self.train_data = pd.read_csv('../data/processed/' + target_class + '/'+ target_class + '.csv')
-        self.attention=attention()
+        self.train_data = pd.read_csv('../data/processed/' + target_class + '/' + target_class + '.csv')
+        self.attention = attention()
         self.train_texts = None
         self.train_labels = None
         self.train_encoded_doc = None
@@ -38,6 +39,7 @@ class morbidity                                                                 
         self.embedding_matrix = None
         self.model = None
         self.embedding_dim = 300
+        self.word_vectors = None
 
     def texts_and_labels(self):
         df = self.train_data[['id', 'text', 'label']]
@@ -51,7 +53,7 @@ class morbidity                                                                 
         print('Labels distribution of Training Labels:', '\n', 'Zeros =', n0, 'Ones =', n1)
 
         if (n0 > n1):
-            df1 = pd.DataFrame(np.repeat(df1.values, n0//n1, axis=0), columns=['id', 'text', 'label'])
+            df1 = pd.DataFrame(np.repeat(df1.values, n0 // n1, axis=0), columns=['id', 'text', 'label'])
         elif (n1 > n0):
             df0 = pd.DataFrame(np.repeat(df0.values, n1 // n0, axis=0), columns=['id', 'text', 'label'])
 
@@ -66,59 +68,58 @@ class morbidity                                                                 
         self.train_labels = labels
 
     def padded_encoded_text(self):
-        # Tokenizing the Data 
+        # Tokenizing the Data
         self.tokenizer.fit_on_texts(self.train_texts)
         # Defining the length of vocabulary
         self.vocab_size = len(self.tokenizer.word_index) + 1
         # Defining the vocabulary made from unique words
-        self.my_vocab = set([w for (w,i) in self.tokenizer.word_index.items()])
-        #Encoding the data to integar
+        self.my_vocab = set([w for (w, i) in self.tokenizer.word_index.items()])
+        # Encoding the data to integar
         self.train_encoded_doc = self.tokenizer.texts_to_sequences(self.train_texts)
         # Calculating the average, standard deviation & maximum length of Encoded Training Data
         length_train_texts = [len(x) for x in self.train_encoded_doc]
         self.max_length = int(mean(length_train_texts)) + int(np.std(length_train_texts))
-        #Padding the Integer Encoded Data to the max_length
+        # Padding the Integer Encoded Data to the max_length
         self.padded_train_data = pad_sequences(self.train_encoded_doc, maxlen=self.max_length)
 
     def word2vec(self):
         print('> loading word2vec embeddings')
-        #B. Word2Vecvec Using Gensim
-        word_vectors = KeyedVectors.load_word2vec_format('../lib/word2vec-GoogleNews-vectors-negative300.bin', binary=True)
+        # B. Word2Vecvec Using Gensim
+        self.word_vectors = KeyedVectors.load_word2vec_format('../lib/word2vec-GoogleNews-vectors-negative300.bin',
+                                                         binary=True)
         # Creating embedding matrix
         self.embedding_matrix = np.zeros((self.vocab_size, 300))
         for word, i in self.tokenizer.word_index.items():
-            if word in word_vectors:
-                embedding_vector = word_vectors[word]
+            if word in self.word_vectors:
+                embedding_vector = self.word_vectors[word]
                 self.embedding_matrix[i] = embedding_vector
-        del(word_vectors)
-       
+
     def glove(self):
         print('> loading glove embeddings')
-        #C. Glove Using Gensim
-        word_vectors = KeyedVectors.load_word2vec_format('../lib/glove.6B.300d.w2vformat.txt', binary=False)
+        # C. Glove Using Gensim
+        self.word_vectors = KeyedVectors.load_word2vec_format('../lib/glove.6B.300d.w2vformat.txt', binary=False)
         # Creating embedding matrix
         self.embedding_matrix = np.zeros((self.vocab_size, 300))
         for word, i in self.tokenizer.word_index.items():
-            if word in word_vectors:
-                embedding_vector = word_vectors[word]
+            if word in self.word_vectors:
+                embedding_vector = self.word_vectors[word]
                 self.embedding_matrix[i] = embedding_vector
-                del(word_vectors)
 
     def fasttext(self):
         print('> loading fasttext embeddings')
-        #D. Fast Text Using Gensim 
-        word_vectors = KeyedVectors.load_word2vec_format('../lib/fasttext-300d-2M.vec', binary=False)
+        # D. Fast Text Using Gensim
+        self.word_vectors = KeyedVectors.load_word2vec_format('../lib/fasttext-300d-2M.vec', binary=False)
         # Creating embedding matrix
         self.embedding_matrix = np.zeros((self.vocab_size, 300))
         for word, i in self.tokenizer.word_index.items():
-            if word in word_vectors:
-                embedding_vector = word_vectors[word]
+            if word in self.word_vectors:
+                embedding_vector = self.word_vectors[word]
                 self.embedding_matrix[i] = embedding_vector
-        del(word_vectors)
 
     def bi_lstm(self):
         self.model = Sequential()
-        e = Embedding(self.vocab_size, self.embedding_dim, weights=[self.embedding_matrix], input_length=self.max_length, trainable=False) 
+        e = Embedding(self.vocab_size, self.embedding_dim, weights=[self.embedding_matrix],
+                      input_length=self.max_length, trainable=False)
         self.model.add(e)
         self.model.add(Bidirectional(LSTM(128, return_sequences=True, dropout=0.1)))
         self.model.add(Bidirectional(LSTM(64, return_sequences=False, dropout=0.1)))
@@ -152,20 +153,23 @@ class morbidity                                                                 
         return new_y_test, new_y_pred
 
     def train(self):
-        X = self.padded_train_data  
-        Y = np.array(self.train_labels) 
-        # K-fold Validation 
+        X = self.padded_train_data
+        Y = np.array(self.train_labels)
+        # K-fold Validation
         kf = KFold(n_splits=10, shuffle=True)
         kf.get_n_splits(X)
         acc_t = []
         auc_t = []
         f1_t = []
+        i = 1
 
         for train_index, test_index in kf.split(X):
+            print("---------------------------")
+            print('Cross validation cycle:', i)
             X_train, X_test = X[train_index], X[test_index]
             Y_train, Y_test = Y[train_index], Y[test_index]
             self.model.fit(X_train, Y_train, epochs=10, batch_size=64, verbose=1)
-            Y_pred=(self.model.predict(X_test) > 0.5).astype("int32")
+            Y_pred = (self.model.predict(X_test) > 0.5).astype("int32")
             new_y_test, new_y_pred = self.swap_label(Y_test, Y_pred)
 
             old_acc, old_auc, old_precision, old_recall, old_f1 = self.classification_metrics(Y_pred, Y_test)
@@ -176,11 +180,13 @@ class morbidity                                                                 
             f1_t.append(mean([old_f1, new_f1]))
 
             self.bi_lstm()
+            i = i + 1
 
         acc_avg = mean(acc_t)
         auc_avg = mean(auc_t)
         f1_avg = mean(f1_t)
         return acc_avg, auc_avg, f1_avg
+
 
 if __name__ == "__main__":
     method = input("Word embedding method:")
